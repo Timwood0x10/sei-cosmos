@@ -313,7 +313,7 @@ func NewSimApp(
 
 	app.GovKeeper = *govKeeper.SetHooks(
 		govtypes.NewMultiGovHooks(
-		// register the governance hooks
+			// register the governance hooks
 		),
 	)
 
@@ -477,8 +477,8 @@ func (app *SimApp) FinalizeBlocker(ctx sdk.Context, req *abci.RequestFinalizeBlo
 		Hash: req.Hash,
 		ByzantineValidators: utils.Map(req.ByzantineValidators, func(mis abci.Misbehavior) abci.Evidence {
 			return abci.Evidence{
-				Type:             abci.MisbehaviorType(mis.Type),
-				Validator:        abci.Validator(mis.Validator),
+				Type:             mis.Type,
+				Validator:        mis.Validator,
 				Height:           mis.Height,
 				Time:             mis.Time,
 				TotalVotingPower: mis.TotalVotingPower,
@@ -488,7 +488,7 @@ func (app *SimApp) FinalizeBlocker(ctx sdk.Context, req *abci.RequestFinalizeBlo
 			Round: req.DecidedLastCommit.Round,
 			Votes: utils.Map(req.DecidedLastCommit.Votes, func(vote abci.VoteInfo) abci.VoteInfo {
 				return abci.VoteInfo{
-					Validator:       abci.Validator(vote.Validator),
+					Validator:       vote.Validator,
 					SignedLastBlock: vote.SignedLastBlock,
 				}
 			}),

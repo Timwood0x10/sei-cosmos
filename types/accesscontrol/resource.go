@@ -200,7 +200,7 @@ func (r ResourceType) GetResourceDependencies() []ResourceType {
 	// resource is its own dependency
 	resources := []ResourceType{r}
 
-	//get parents
+	// get parents
 	resources = append(resources, r.GetParentResources()...)
 
 	// traverse children

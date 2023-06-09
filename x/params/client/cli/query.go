@@ -57,7 +57,6 @@ func NewQuerySubspaceParamsCmd() *cobra.Command {
 	return cmd
 }
 
-
 func NewQueryFeeParamsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "feesparams",

@@ -2,11 +2,12 @@ package testutil
 
 import (
 	"cosmossdk.io/x/tx/signing"
+
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/gogoproto/proto"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/address"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 )
 
 // CodecOptions are options for creating a test codec.

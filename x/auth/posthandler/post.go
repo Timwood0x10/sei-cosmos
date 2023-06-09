@@ -8,8 +8,8 @@ import (
 type HandlerOptions struct{}
 
 // NewPostHandler returns an empty PostHandler chain.
-func NewPostHandler(_ HandlerOptions) (sdk.PostHandler, error) {
-	postDecorators := []sdk.PostDecorator{}
+func NewPostHandler(_ HandlerOptions) (sdk.AnteHandler, error) {
+	postDecorators := []sdk.AnteFullDecorator{}
 
-	return sdk.ChainPostDecorators(postDecorators...), nil
+	return sdk.ChainAnteDecoratorHandlers(postDecorators...), nil
 }

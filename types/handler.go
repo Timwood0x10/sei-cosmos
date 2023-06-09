@@ -27,8 +27,8 @@ type DefaultDepDecorator struct{}
 func (d DefaultDepDecorator) AnteDeps(txDeps []sdkacltypes.AccessOperation, tx Tx, next AnteDepGenerator) (newTxDeps []sdkacltypes.AccessOperation, err error) {
 	defaultDeps := []sdkacltypes.AccessOperation{
 		{
-			ResourceType: sdkacltypes.ResourceType_ANY,
-			AccessType: sdkacltypes.AccessType_UNKNOWN,
+			ResourceType:       sdkacltypes.ResourceType_ANY,
+			AccessType:         sdkacltypes.AccessType_UNKNOWN,
 			IdentifierTemplate: "*",
 		},
 	}
@@ -47,7 +47,7 @@ type AnteFullDecorator interface {
 }
 
 func ChainAnteDecorators(chain ...AnteFullDecorator) (AnteHandler, AnteDepGenerator) {
-	anteHandlerChainFunc := chainAnteDecoratorHandlers(chain...)
+	anteHandlerChainFunc := ChainAnteDecoratorHandlers(chain...)
 	anteHandlerDepGenFunc := chainAnteDecoratorDepGenerators(chain...)
 	return anteHandlerChainFunc, anteHandlerDepGenFunc
 
@@ -67,7 +67,7 @@ func ChainAnteDecorators(chain ...AnteFullDecorator) (AnteHandler, AnteDepGenera
 // transactions to be processed with an infinite gasmeter and open a DOS attack vector.
 // Use `ante.SetUpContextDecorator` or a custom Decorator with similar functionality.
 // Returns nil when no AnteDecorator are supplied.
-func chainAnteDecoratorHandlers(chain ...AnteFullDecorator) AnteHandler {
+func ChainAnteDecoratorHandlers(chain ...AnteFullDecorator) AnteHandler {
 	if len(chain) == 0 {
 		return nil
 	}
@@ -78,7 +78,7 @@ func chainAnteDecoratorHandlers(chain ...AnteFullDecorator) AnteHandler {
 	}
 
 	return func(ctx Context, tx Tx, simulate bool) (Context, error) {
-		return chain[0].AnteHandle(ctx, tx, simulate, chainAnteDecoratorHandlers(chain[1:]...))
+		return chain[0].AnteHandle(ctx, tx, simulate, ChainAnteDecoratorHandlers(chain[1:]...))
 	}
 }
 
@@ -111,7 +111,7 @@ func CustomDepWrappedAnteDecorator(decorator AnteDecorator, depDecorator AnteDep
 
 func DefaultWrappedAnteDecorator(decorator AnteDecorator) WrappedAnteDecorator {
 	return WrappedAnteDecorator{
-		Decorator:    decorator,
+		Decorator: decorator,
 		// TODO:: Use DefaultDepDecorator when each decorator defines their own
 		//		  See NewConsumeGasForTxSizeDecorator for an example of how to implement a decorator
 		DepDecorator: NoDepDecorator{},

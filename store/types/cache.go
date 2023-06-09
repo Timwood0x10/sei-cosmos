@@ -47,7 +47,7 @@ type BoundedCache struct {
 	CacheBackend
 	limit int
 
-	mu *sync.Mutex
+	mu         *sync.Mutex
 	metricName []string
 }
 

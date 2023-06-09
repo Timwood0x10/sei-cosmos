@@ -31,7 +31,7 @@ func TestEmitEventMangerInIterator(t *testing.T) {
 	for ; cache.Valid(); cache.Next() {
 	}
 	iter := cachekv.NewCacheMergeIterator(parent, cache, true, eventManager, types.NewKVStoreKey("CacheKvTest"))
-	
+
 	// get the next value
 	iter.Value()
 
@@ -44,7 +44,7 @@ func TestEmitEventMangerInIterator(t *testing.T) {
 	// assert event emission when cache is available
 	cache = kvstore.Iterator(keys[1], keys[2])
 	iter = cachekv.NewCacheMergeIterator(parent, cache, true, eventManager, types.NewKVStoreKey("CacheKvTest"))
-	
+
 	// get the next value
 	iter.Value()
 

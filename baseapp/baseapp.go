@@ -952,7 +952,7 @@ func (app *BaseApp) runTx(ctx sdk.Context, mode runTxMode, txBytes []byte) (gInf
 			// the instantiated gas meter in the AnteHandler, so we update the context
 			// prior to returning.
 			//
-			// This also replaces the GasMeter in the context where GasUsed was initalized 0
+			// This also replaces the GasMeter in the context where GasUsed was initialized 0
 			// and updated with gas consumed in the ante handler runs
 			// The GasMeter is a pointer and its passed to the RunMsg and tracks the consumed
 			// gas there too.
