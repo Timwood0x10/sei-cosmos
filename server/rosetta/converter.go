@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/btcsuite/btcd/btcec"
 	"reflect"
 
 	cosmoscrypto "github.com/cosmos/cosmos-sdk/crypto/utils"
 	auth "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	btectypes "github.com/btcsuite/btcd/btcec"
 	tmcoretypes "github.com/tendermint/tendermint/rpc/coretypes"
 	tmtypes "github.com/tendermint/tendermint/types"
 
@@ -653,7 +653,7 @@ func (c converter) PubKey(pubKey *rosettatypes.PublicKey) (cryptotypes.PubKey, e
 		return nil, crgerrs.WrapError(crgerrs.ErrUnsupportedCurve, "only secp256k1 supported")
 	}
 
-	cmp, err := btectypes.ParsePubKey(pubKey.Bytes, btectypes.S256())
+	cmp, err := btcec.ParsePubKey(pubKey.Bytes, btcec.S256())
 	if err != nil {
 		return nil, crgerrs.WrapError(crgerrs.ErrBadArgument, err.Error())
 	}
