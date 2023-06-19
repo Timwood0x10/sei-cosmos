@@ -9,7 +9,6 @@ import (
 	cosmoscrypto "github.com/cosmos/cosmos-sdk/crypto/utils"
 	auth "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	_ "github.com/btcsuite/btcd/btcec"
 	btectypes "github.com/btcsuite/btcd/btcec"
 	tmcoretypes "github.com/tendermint/tendermint/rpc/coretypes"
 	tmtypes "github.com/tendermint/tendermint/types"
