@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/pkg/errors"
 
 	tmbtcec "github.com/tendermint/btcd/btcec"
@@ -172,7 +171,10 @@ func warnIfErrors(f func() error) {
 }
 
 func convertDERtoBER(signatureDER []byte) ([]byte, error) {
-	sigDER, err := btcec.ParseDERSignature(signatureDER, btcec.S256())
+
+	//sigDER, err := btcec.ParseDERSignature(signatureDER, btcec.S256())
+	sigDER, err := tmbtcec.ParseSignature(signatureDER, tmbtcec.S256())
+
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +243,7 @@ func getPubKeyUnsafe(device SECP256K1, path hd.BIP44Params) (types.PubKey, error
 	}
 
 	// re-serialize in the 33-byte compressed format
-	cmp, err := btcec.ParsePubKey(publicKey, btcec.S256())
+	cmp, err := tmbtcec.ParsePubKey(publicKey, tmbtcec.S256())
 	if err != nil {
 		return nil, fmt.Errorf("error parsing public key: %v", err)
 	}
@@ -265,7 +267,7 @@ func getPubKeyAddrSafe(device SECP256K1, path hd.BIP44Params, hrp string) (types
 	}
 
 	// re-serialize in the 33-byte compressed format
-	cmp, err := btcec.ParsePubKey(publicKey, btcec.S256())
+	cmp, err := tmbtcec.ParsePubKey(publicKey, tmbtcec.S256())
 	if err != nil {
 		return nil, "", fmt.Errorf("error parsing public key: %v", err)
 	}
