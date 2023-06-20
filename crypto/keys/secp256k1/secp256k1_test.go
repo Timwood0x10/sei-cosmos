@@ -7,10 +7,10 @@ import (
 	"math/big"
 	"testing"
 
-	btcSecp256k1 "github.com/btcsuite/btcd/btcec"
 	"github.com/cosmos/btcutil/base58"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	btcSecp256k1 "github.com/tendermint/btcd/btcec"
 	"github.com/tendermint/tendermint/crypto"
 	tmsecp256k1 "github.com/tendermint/tendermint/crypto/secp256k1"
 

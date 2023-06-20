@@ -6,8 +6,8 @@ package secp256k1
 import (
 	"math/big"
 
-	secp256k1 "github.com/btcsuite/btcd/btcec"
 	cosmoscrypto "github.com/cosmos/cosmos-sdk/crypto/utils"
+	secp256k1 "github.com/tendermint/btcd/btcec"
 )
 
 // used to reject malleable signatures

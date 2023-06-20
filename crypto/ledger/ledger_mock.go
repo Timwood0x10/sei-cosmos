@@ -6,8 +6,8 @@ package ledger
 import (
 	"fmt"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/pkg/errors"
+	"github.com/tendermint/btcd/btcec"
 
 	secp256k1 "github.com/tendermint/btcd/btcec"
 

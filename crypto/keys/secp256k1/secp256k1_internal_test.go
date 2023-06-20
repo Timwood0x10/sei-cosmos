@@ -5,8 +5,8 @@ import (
 	"math/big"
 	"testing"
 
-	btcSecp256k1 "github.com/btcsuite/btcd/btcec"
 	"github.com/stretchr/testify/require"
+	btcSecp256k1 "github.com/tendermint/btcd/btcec"
 )
 
 func Test_genPrivKey(t *testing.T) {

@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/tendermint/btcd/btcec"
 )
 
 // BIP44Params wraps BIP 44 params (5 level BIP 32 path).
