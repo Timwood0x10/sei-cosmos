@@ -467,6 +467,10 @@ func (m *MsgData) GetData() []byte {
 // for each message.
 type TxMsgData struct {
 	Data []*MsgData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	// msg_responses contains the Msg handler responses packed into Anys.
+	//
+	// Since: cosmos-sdk 0.46
+	MsgResponses []*types.Any `protobuf:"bytes,2,rep,name=msg_responses,json=msgResponses,proto3" json:"msg_responses,omitempty"`
 }
 
 func (m *TxMsgData) Reset()      { *m = TxMsgData{} }
@@ -504,6 +508,13 @@ var xxx_messageInfo_TxMsgData proto.InternalMessageInfo
 func (m *TxMsgData) GetData() []*MsgData {
 	if m != nil {
 		return m.Data
+	}
+	return nil
+}
+
+func (m *TxMsgData) GetMsgResponses() []*types.Any {
+	if m != nil {
+		return m.MsgResponses
 	}
 	return nil
 }
@@ -1119,6 +1130,20 @@ func (m *TxMsgData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.MsgResponses) > 0 {
+		for iNdEx := len(m.MsgResponses) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.MsgResponses[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintAbci(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x12
+		}
+	}
 	if len(m.Data) > 0 {
 		for iNdEx := len(m.Data) - 1; iNdEx >= 0; iNdEx-- {
 			{
@@ -1410,6 +1435,12 @@ func (m *TxMsgData) Size() (n int) {
 			n += 1 + l + sovAbci(uint64(l))
 		}
 	}
+	if len(m.MsgResponses) > 0 {
+		for _, e := range m.MsgResponses {
+			l = e.Size()
+			n += 1 + l + sovAbci(uint64(l))
+		}
+	}
 	return n
 }
 
@@ -1502,8 +1533,14 @@ func (this *TxMsgData) String() string {
 		repeatedStringForData += strings.Replace(f.String(), "MsgData", "MsgData", 1) + ","
 	}
 	repeatedStringForData += "}"
+	repeatedStringForMsgResponses := "[]*Any{"
+	for _, f := range this.MsgResponses {
+		repeatedStringForMsgResponses += strings.Replace(fmt.Sprintf("%v", f), "Any", "types.Any", 1) + ","
+	}
+	repeatedStringForMsgResponses += "}"
 	s := strings.Join([]string{`&TxMsgData{`,
 		`Data:` + repeatedStringForData + `,`,
+		`MsgResponses:` + repeatedStringForMsgResponses + `,`,
 		`}`,
 	}, "")
 	return s
@@ -2859,154 +2896,9 @@ func (m *TxMsgData) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipAbci(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthAbci
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *SearchTxsResult) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowAbci
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: SearchTxsResult: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: SearchTxsResult: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TotalCount", wireType)
-			}
-			m.TotalCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAbci
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.TotalCount |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
 		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Count", wireType)
-			}
-			m.Count = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAbci
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Count |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PageNumber", wireType)
-			}
-			m.PageNumber = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAbci
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.PageNumber |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PageTotal", wireType)
-			}
-			m.PageTotal = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAbci
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.PageTotal |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 5:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Limit", wireType)
-			}
-			m.Limit = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAbci
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Limit |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 6:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Txs", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MsgResponses", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -3033,8 +2925,8 @@ func (m *SearchTxsResult) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Txs = append(m.Txs, &TxResponse{})
-			if err := m.Txs[len(m.Txs)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.MsgResponses = append(m.MsgResponses, &types.Any{})
+			if err := m.MsgResponses[len(m.MsgResponses)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
