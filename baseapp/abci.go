@@ -27,6 +27,16 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/legacytm"
 )
 
+// Supported ABCI Query prefixes and paths
+const (
+	QueryPathApp    = "app"
+	QueryPathCustom = "custom"
+	QueryPathP2P    = "p2p"
+	QueryPathStore  = "store"
+
+	QueryPathBroadcastTx = "/cosmos.tx.v1beta1.Service/BroadcastTx"
+)
+
 // InitChain implements the ABCI interface. It runs the initialization logic
 // directly on the CommitMultiStore.
 func (app *BaseApp) InitChain(ctx context.Context, req *abci.RequestInitChain) (res *abci.ResponseInitChain, err error) {
@@ -431,7 +441,7 @@ func (app *BaseApp) Query(ctx context.Context, req *abci.RequestQuery) (res *abc
 		return &resp, nil
 	}
 
-	path := splitPath(req.Path)
+	path := SplitPath(req.Path)
 
 	var resp abci.ResponseQuery
 	if len(path) == 0 {
@@ -896,7 +906,7 @@ func handleQueryCustom(app *BaseApp, path []string, req abci.RequestQuery) abci.
 // splitPath splits a string path using the delimiter '/'.
 //
 // e.g. "this/is/funny" becomes []string{"this", "is", "funny"}
-func splitPath(requestPath string) (path []string) {
+func SplitPath(requestPath string) (path []string) {
 	path = strings.Split(requestPath, "/")
 
 	// first element is empty string
