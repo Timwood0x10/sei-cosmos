@@ -10,6 +10,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 
 	"github.com/cosmos/cosmos-sdk/codec/types"
+	gogoproto "github.com/cosmos/gogoproto/proto"
 )
 
 // ProtoCodecMarshaler defines an interface for codecs that utilize Protobuf for both
@@ -37,7 +38,13 @@ func NewProtoCodec(interfaceRegistry types.InterfaceRegistry) *ProtoCodec {
 // NOTE: this function must be used with a concrete type which
 // implements proto.Message. For interface please use the codec.MarshalInterface
 func (pc *ProtoCodec) Marshal(o ProtoMarshaler) ([]byte, error) {
-	return o.Marshal()
+	// Size() check can catch the typed nil value.
+	if o == nil || gogoproto.Size(o) == 0 {
+		// return empty bytes instead of nil, because nil has special meaning in places like store.Set
+		return []byte{}, nil
+	}
+
+	return gogoproto.Marshal(o)
 }
 
 // MustMarshal implements BinaryMarshaler.MustMarshal method.

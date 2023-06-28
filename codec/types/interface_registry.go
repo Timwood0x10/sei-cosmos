@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/gogo/protobuf/jsonpb"
+	"github.com/cosmos/gogoproto/jsonpb"
+	"github.com/cosmos/gogoproto/proto"
 
-	"github.com/gogo/protobuf/proto"
+	"cosmossdk.io/x/tx/signing"
 )
 
 // AnyUnpacker is an interface which allows safely unpacking types packed
@@ -93,6 +94,30 @@ func NewInterfaceRegistry() InterfaceRegistry {
 		interfaceImpls: map[reflect.Type]interfaceMap{},
 		typeURLMap:     map[string]reflect.Type{},
 	}
+}
+
+// InterfaceRegistryOptions are options for creating a new InterfaceRegistry.
+type InterfaceRegistryOptions struct {
+	// ProtoFiles is the set of files to use for the registry. It is required.
+	ProtoFiles signing.ProtoFileResolver
+
+	// SigningOptions are the signing options to use for the registry.
+	SigningOptions signing.Options
+}
+
+// NewInterfaceRegistryWithOptions returns a new InterfaceRegistry with the given options.
+func NewInterfaceRegistryWithOptions(options InterfaceRegistryOptions) (InterfaceRegistry, error) {
+	if options.ProtoFiles == nil {
+		return nil, fmt.Errorf("proto files must be provided")
+	}
+
+	options.SigningOptions.FileResolver = options.ProtoFiles
+
+	return &interfaceRegistry{
+		interfaceNames: map[string]reflect.Type{},
+		interfaceImpls: map[reflect.Type]interfaceMap{},
+		typeURLMap:     map[string]reflect.Type{},
+	}, nil
 }
 
 func (registry *interfaceRegistry) RegisterInterface(protoName string, iface interface{}, impls ...proto.Message) {
