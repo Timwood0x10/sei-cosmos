@@ -21,6 +21,9 @@ var (
 	}
 )
 
+// We generate dependencies on a per message basis for a trnasaction, but antehandlers also use resources. As a result we use -1 for the ante handler index (used as map key) to indicate that it is prior to msgs in the tx
+const ANTE_MSG_INDEX = int(-1)
+
 type Comparator struct {
 	AccessType AccessType
 	Identifier string
@@ -92,12 +95,6 @@ func (c *Comparator) DependencyMatch(accessOp AccessOperation, prefix []byte) bo
 	// With the same prefix, c.Identififer should be a superset of IdentifierTemplate, it not equal
 	if !strings.Contains(c.Identifier, accessOp.GetIdentifierTemplate()) {
 		return false
-	}
-
-	// At this point the resource identifier matches, but the access type is unknown, therefore
-	// it will match both read and writes
-	if accessOp.AccessType == AccessType_UNKNOWN {
-		return true
 	}
 
 	return true

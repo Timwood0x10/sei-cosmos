@@ -44,20 +44,25 @@ type Store struct {
 // LoadStore returns an IAVL Store as a CommitKVStore. Internally, it will load the
 // store's version (id) from the provided DB. An error is returned if the version
 // fails to load, or if called with a positive version on an empty tree.
-func LoadStore(db dbm.DB, logger log.Logger, key types.StoreKey, id types.CommitID, lazyLoading bool, cacheSize int, disableFastNode bool, noVersioning bool) (types.CommitKVStore, error) {
-	return LoadStoreWithInitialVersion(db, logger, key, id, lazyLoading, 0, cacheSize, disableFastNode, noVersioning)
+func LoadStore(db dbm.DB, logger log.Logger, key types.StoreKey, id types.CommitID, lazyLoading bool, cacheSize int, disableFastNode bool, orphanConfig *iavl.Options) (types.CommitKVStore, error) {
+	return LoadStoreWithInitialVersion(db, logger, key, id, lazyLoading, 0, cacheSize, disableFastNode, orphanConfig)
 }
 
 // LoadStoreWithInitialVersion returns an IAVL Store as a CommitKVStore setting its initialVersion
 // to the one given. Internally, it will load the store's version (id) from the
 // provided DB. An error is returned if the version fails to load, or if called with a positive
 // version on an empty tree.
-func LoadStoreWithInitialVersion(db dbm.DB, logger log.Logger, key types.StoreKey, id types.CommitID, lazyLoading bool, initialVersion uint64, cacheSize int, disableFastNode bool, noVersioning bool) (types.CommitKVStore, error) {
-	tree, err := iavl.NewMutableTreeWithOpts(db, cacheSize, &iavl.Options{
+func LoadStoreWithInitialVersion(db dbm.DB, logger log.Logger, key types.StoreKey, id types.CommitID, lazyLoading bool, initialVersion uint64, cacheSize int, disableFastNode bool, orphanConfig *iavl.Options) (types.CommitKVStore, error) {
+	opts := iavl.Options{
 		InitialVersion: initialVersion,
 		Sync:           false,
-		NoVersioning:   noVersioning,
-	}, disableFastNode)
+	}
+	if orphanConfig != nil {
+		opts.SeparateOrphanStorage = orphanConfig.SeparateOrphanStorage
+		opts.SeparateOphanVersionsToKeep = orphanConfig.SeparateOphanVersionsToKeep
+		opts.OrphanDirectory = orphanConfig.OrphanDirectory
+	}
+	tree, err := iavl.NewMutableTreeWithOpts(db, cacheSize, &opts, disableFastNode)
 	if err != nil {
 		return nil, err
 	}
@@ -383,7 +388,8 @@ func (st *Store) Query(req abci.RequestQuery) (res abci.ResponseQuery) {
 			panic(fmt.Sprintf("version exists in store but could not retrieve corresponding versioned tree in store, %s", err.Error()))
 		}
 		mtree := &iavl.MutableTree{
-			ImmutableTree: iTree,
+			ITree: iTree,
+			Mtx:   &sync.RWMutex{},
 		}
 
 		// get proof from tree and convert to merkle.Proof before adding to result
@@ -428,14 +434,14 @@ func getProofFromTree(tree *iavl.MutableTree, key []byte, exists bool) *tmcrypto
 
 	if exists {
 		// value was found
-		commitmentProof, err = tree.GetMembershipProof(key)
+		commitmentProof, err = tree.ImmutableTree().GetMembershipProof(key)
 		if err != nil {
 			// sanity check: If value was found, membership proof must be creatable
 			panic(fmt.Sprintf("unexpected value for empty proof: %s", err.Error()))
 		}
 	} else {
 		// value wasn't found
-		commitmentProof, err = tree.GetNonMembershipProof(key)
+		commitmentProof, err = tree.ImmutableTree().GetNonMembershipProof(key)
 		if err != nil {
 			// sanity check: If value wasn't found, nonmembership proof must be creatable
 			panic(fmt.Sprintf("unexpected error for nonexistence proof: %s", err.Error()))

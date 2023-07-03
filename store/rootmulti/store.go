@@ -61,7 +61,7 @@ type Store struct {
 	pruneHeights        []int64
 	initialVersion      int64
 	archivalVersion     int64
-	noVersioning        bool
+	orphanOpts          *iavltree.Options
 
 	traceWriter       io.Writer
 	traceContext      types.TraceContext
@@ -300,7 +300,7 @@ func (rs *Store) loadVersion(ver int64, upgrades *types.StoreUpgrades) error {
 		}
 	}
 
-	rs.lastCommitInfo = cInfo
+	rs.SetLastCommitInfo(cInfo)
 	rs.stores = newStores
 
 	// load any pruned heights we missed from disk to be pruned on the next run
@@ -422,14 +422,13 @@ func (rs *Store) ListeningEnabled(key types.StoreKey) bool {
 
 // LastCommitID implements Committer/CommitStore.
 func (rs *Store) LastCommitID() types.CommitID {
-	rs.lastCommitInfoMtx.RLock()
-	defer rs.lastCommitInfoMtx.RUnlock()
-	if rs.lastCommitInfo == nil {
+	c := rs.LastCommitInfo()
+	if c == nil {
 		return types.CommitID{
 			Version: GetLatestVersion(rs.db),
 		}
 	}
-	return rs.lastCommitInfo.CommitID()
+	return c.CommitID()
 }
 
 func (rs *Store) GetWorkingHash() ([]byte, error) {
@@ -456,7 +455,8 @@ func (rs *Store) GetWorkingHash() ([]byte, error) {
 // Commit implements Committer/CommitStore.
 func (rs *Store) Commit(bumpVersion bool) types.CommitID {
 	var previousHeight, version int64
-	if rs.lastCommitInfo.GetVersion() == 0 && rs.initialVersion > 1 {
+	c := rs.LastCommitInfo()
+	if c.GetVersion() == 0 && rs.initialVersion > 1 {
 		// This case means that no commit has been made in the store, we
 		// start from initialVersion.
 		version = rs.initialVersion
@@ -467,16 +467,14 @@ func (rs *Store) Commit(bumpVersion bool) types.CommitID {
 		// case we increment the version from there,
 		// - or there was no previous commit, and initial version was not set,
 		// in which case we start at version 1.
-		previousHeight = rs.lastCommitInfo.GetVersion()
+		previousHeight = c.GetVersion()
 		version = previousHeight + 1
 	} else {
-		version = rs.lastCommitInfo.GetVersion()
+		version = c.GetVersion()
 	}
 
-	rs.lastCommitInfoMtx.Lock()
-	rs.lastCommitInfo = commitStores(version, rs.stores, bumpVersion)
-	rs.lastCommitInfoMtx.Unlock()
-	defer rs.flushMetadata(rs.db, version, rs.lastCommitInfo)
+	rs.SetLastCommitInfo(commitStores(version, rs.stores, bumpVersion))
+	defer rs.flushMetadata(rs.db, version, rs.LastCommitInfo())
 
 	// Determine if pruneHeight height needs to be added to the list of heights to
 	// be pruned, where pruneHeight = (commitHeight - 1) - KeepRecent.
@@ -499,15 +497,15 @@ func (rs *Store) Commit(bumpVersion bool) types.CommitID {
 
 	return types.CommitID{
 		Version: version,
-		Hash:    rs.lastCommitInfo.Hash(),
+		Hash:    rs.LastCommitInfo().Hash(),
 	}
 }
 
 // PruneStores will batch delete a list of heights from each mounted sub-store.
 // If clearStorePruningHeihgts is true, store's pruneHeights is appended to the
 // pruningHeights and reset after finishing pruning.
-func (rs *Store) PruneStores(clearStorePruningHeihgts bool, pruningHeights []int64) {
-	if clearStorePruningHeihgts {
+func (rs *Store) PruneStores(clearStorePruningHeights bool, pruningHeights []int64) {
+	if clearStorePruningHeights {
 		pruningHeights = append(pruningHeights, rs.pruneHeights...)
 	}
 
@@ -529,7 +527,7 @@ func (rs *Store) PruneStores(clearStorePruningHeihgts bool, pruningHeights []int
 		}
 	}
 
-	if clearStorePruningHeihgts {
+	if clearStorePruningHeights {
 		rs.pruneHeights = make([]int64, 0)
 	}
 }
@@ -684,8 +682,9 @@ func (rs *Store) Query(req abci.RequestQuery) abci.ResponseQuery {
 	// Otherwise, we query for the commit info from disk.
 	var commitInfo *types.CommitInfo
 
-	if res.Height == rs.lastCommitInfo.Version {
-		commitInfo = rs.lastCommitInfo
+	c := rs.LastCommitInfo()
+	if res.Height == c.Version {
+		commitInfo = c
 	} else {
 		commitInfo, err = getCommitInfo(rs.db, res.Height)
 		if err != nil {
@@ -951,9 +950,9 @@ func (rs *Store) loadCommitStoreFromParams(key types.StoreKey, id types.CommitID
 		var err error
 
 		if params.initialVersion == 0 {
-			store, err = iavl.LoadStore(db, rs.logger, key, id, rs.lazyLoading, rs.iavlCacheSize, rs.iavlDisableFastNode, rs.noVersioning)
+			store, err = iavl.LoadStore(db, rs.logger, key, id, rs.lazyLoading, rs.iavlCacheSize, rs.iavlDisableFastNode, rs.orphanOpts)
 		} else {
-			store, err = iavl.LoadStoreWithInitialVersion(db, rs.logger, key, id, rs.lazyLoading, params.initialVersion, rs.iavlCacheSize, rs.iavlDisableFastNode, rs.noVersioning)
+			store, err = iavl.LoadStoreWithInitialVersion(db, rs.logger, key, id, rs.lazyLoading, params.initialVersion, rs.iavlCacheSize, rs.iavlDisableFastNode, rs.orphanOpts)
 		}
 
 		if err != nil {
@@ -1030,8 +1029,8 @@ func (rs *Store) RollbackToVersion(target int64) error {
 			fmt.Printf("Reset key=%s to height=%d\n", key.Name(), latestVersion)
 		}
 	}
-	rs.lastCommitInfo = commitStores(target, rs.stores, false)
-	rs.flushMetadata(rs.db, target, rs.lastCommitInfo)
+	rs.SetLastCommitInfo(commitStores(target, rs.stores, false))
+	rs.flushMetadata(rs.db, target, rs.LastCommitInfo())
 	return rs.LoadLatestVersion()
 }
 
@@ -1049,8 +1048,20 @@ func (rs *Store) flushMetadata(db dbm.DB, version int64, cInfo *types.CommitInfo
 	rs.logger.Info("App State Saved height=%d hash=%X\n", cInfo.CommitID().Version, cInfo.CommitID().Hash)
 }
 
-func (rs *Store) SetNoVersioning() {
-	rs.noVersioning = true
+func (rs *Store) SetOrphanConfig(opts *iavltree.Options) {
+	rs.orphanOpts = opts
+}
+
+func (rs *Store) LastCommitInfo() *types.CommitInfo {
+	rs.lastCommitInfoMtx.RLock()
+	defer rs.lastCommitInfoMtx.RUnlock()
+	return rs.lastCommitInfo
+}
+
+func (rs *Store) SetLastCommitInfo(c *types.CommitInfo) {
+	rs.lastCommitInfoMtx.Lock()
+	defer rs.lastCommitInfoMtx.Unlock()
+	rs.lastCommitInfo = c
 }
 
 type storeParams struct {

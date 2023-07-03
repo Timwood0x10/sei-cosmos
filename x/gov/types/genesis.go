@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // NewGenesisState creates a new genesis state for the governance module
@@ -44,29 +43,15 @@ func (data GenesisState) Empty() bool {
 
 // ValidateGenesis checks if parameters are within valid ranges
 func ValidateGenesis(data *GenesisState) error {
-	threshold := data.TallyParams.Threshold
-	if threshold.IsNegative() || threshold.GT(sdk.OneDec()) {
-		return fmt.Errorf("governance vote threshold should be positive and less or equal to one, is %s",
-			threshold.String())
+	if data == nil {
+		return fmt.Errorf("governance genesis state cannot be nil")
 	}
 
-	expeditedThreshold := data.TallyParams.ExpeditedThreshold
-	if expeditedThreshold.IsNegative() || expeditedThreshold.GT(sdk.OneDec()) {
-		return fmt.Errorf("governance expedited vote threshold should be positive and less or equal to one, is %s",
-			expeditedThreshold)
+	if data.Empty() {
+		return fmt.Errorf("governance genesis state cannot be nil")
 	}
 
-	if expeditedThreshold.LTE(threshold) {
-		return fmt.Errorf("expedited governance vote threshold %s should be greater than or equal to the regular threshold %s",
-			expeditedThreshold,
-			threshold)
-	}
-
-	veto := data.TallyParams.VetoThreshold
-	if veto.IsNegative() || veto.GT(sdk.OneDec()) {
-		return fmt.Errorf("governance vote veto threshold should be positive and less or equal to one, is %s",
-			veto.String())
-	}
+	validateTallyParams(data.TallyParams)
 
 	if !data.DepositParams.MinDeposit.IsValid() {
 		return fmt.Errorf("governance deposit amount must be a valid sdk.Coins amount, is %s",

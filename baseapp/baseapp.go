@@ -36,6 +36,7 @@ import (
 	acltypes "github.com/cosmos/cosmos-sdk/types/accesscontrol"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
+	"github.com/cosmos/iavl"
 )
 
 const (
@@ -162,7 +163,7 @@ type BaseApp struct { //nolint: maligned
 
 	compactionInterval uint64
 
-	noVersioning bool
+	orphanConfig *iavl.Options
 
 	TmConfig *tmcfg.Config
 
@@ -213,6 +214,7 @@ type snapshotData struct {
 	snapshotManager    *snapshots.Manager
 	snapshotInterval   uint64 // block interval between state sync snapshots
 	snapshotKeepRecent uint32 // recent state sync snapshots to keep
+	snapshotDirectory  string //  state sync snapshots directory
 }
 
 // NewBaseApp returns a reference to an initialized BaseApp. It accepts a
@@ -288,8 +290,8 @@ func NewBaseApp(
 		panic("must pass --chain-id when calling 'seid start' or set in ~/.sei/config/client.toml")
 	}
 	app.startCompactionRoutine(db)
-	if app.noVersioning {
-		app.cms.(*rootmulti.Store).SetNoVersioning()
+	if app.orphanConfig != nil {
+		app.cms.(*rootmulti.Store).SetOrphanConfig(app.orphanConfig)
 	}
 
 	return app
@@ -470,8 +472,8 @@ func (app *BaseApp) setHaltTime(haltTime uint64) {
 	app.haltTime = haltTime
 }
 
-func (app *BaseApp) setNoVersioning(noVersioning bool) {
-	app.noVersioning = noVersioning
+func (app *BaseApp) setOrphanConfig(opts *iavl.Options) {
+	app.orphanConfig = opts
 }
 
 func (app *BaseApp) setMinRetainBlocks(minRetainBlocks uint64) {
@@ -970,7 +972,7 @@ func (app *BaseApp) runTx(ctx sdk.Context, mode runTxMode, txBytes []byte) (gInf
 		// Dont need to validate in checkTx mode
 		if ctx.MsgValidator() != nil && mode == runTxModeDeliver {
 			storeAccessOpEvents := msCache.GetEvents()
-			accessOps, _ := app.anteDepGenerator([]acltypes.AccessOperation{}, tx)
+			accessOps := ctx.TxMsgAccessOps()[acltypes.ANTE_MSG_INDEX]
 
 			missingAccessOps := ctx.MsgValidator().ValidateAccessOperations(accessOps, storeAccessOpEvents)
 			if len(missingAccessOps) != 0 {

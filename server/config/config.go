@@ -81,7 +81,13 @@ type BaseConfig struct {
 	// compaction. A value of 0 means no forced levelDB
 	CompactionInterval uint64 `mapstructure:"compaction-interval"`
 
+	// deprecated
 	NoVersioning bool `mapstructure:"no-versioning"`
+
+	SeparateOrphanStorage        bool   `mapstructure:"separate-orphan-storage"`
+	SeparateOrphanVersionsToKeep int64  `mapstructure:"separate-orphan-versions-to-keep"`
+	NumOrphanPerFile             int    `mapstructure:"num-orphan-per-file"`
+	OrphanDirectory              string `mapstructure:"orphan-dir"`
 }
 
 // APIConfig defines the API listener configuration.
@@ -168,6 +174,10 @@ type StateSyncConfig struct {
 	// SnapshotKeepRecent sets the number of recent state sync snapshots to keep.
 	// 0 keeps all snapshots.
 	SnapshotKeepRecent uint32 `mapstructure:"snapshot-keep-recent"`
+
+	// SnapshotDirectory sets the parent directory for where state sync snapshots are persisted.
+	// Default is emtpy which will then store under the app home directory.
+	SnapshotDirectory string `mapstructure:"snapshot-directory"`
 }
 
 // Config defines the server's top level configuration
@@ -258,6 +268,7 @@ func DefaultConfig() *Config {
 		StateSync: StateSyncConfig{
 			SnapshotInterval:   0,
 			SnapshotKeepRecent: 2,
+			SnapshotDirectory:  "",
 		},
 	}
 }
@@ -282,19 +293,23 @@ func GetConfig(v *viper.Viper) (Config, error) {
 
 	return Config{
 		BaseConfig: BaseConfig{
-			MinGasPrices:        v.GetString("minimum-gas-prices"),
-			InterBlockCache:     v.GetBool("inter-block-cache"),
-			Pruning:             v.GetString("pruning"),
-			PruningKeepRecent:   v.GetString("pruning-keep-recent"),
-			PruningInterval:     v.GetString("pruning-interval"),
-			HaltHeight:          v.GetUint64("halt-height"),
-			HaltTime:            v.GetUint64("halt-time"),
-			IndexEvents:         v.GetStringSlice("index-events"),
-			MinRetainBlocks:     v.GetUint64("min-retain-blocks"),
-			IAVLCacheSize:       v.GetUint64("iavl-cache-size"),
-			IAVLDisableFastNode: v.GetBool("iavl-disable-fastnode"),
-			CompactionInterval:  v.GetUint64("compaction-interval"),
-			NoVersioning:        v.GetBool("no-versioning"),
+			MinGasPrices:                 v.GetString("minimum-gas-prices"),
+			InterBlockCache:              v.GetBool("inter-block-cache"),
+			Pruning:                      v.GetString("pruning"),
+			PruningKeepRecent:            v.GetString("pruning-keep-recent"),
+			PruningInterval:              v.GetString("pruning-interval"),
+			HaltHeight:                   v.GetUint64("halt-height"),
+			HaltTime:                     v.GetUint64("halt-time"),
+			IndexEvents:                  v.GetStringSlice("index-events"),
+			MinRetainBlocks:              v.GetUint64("min-retain-blocks"),
+			IAVLCacheSize:                v.GetUint64("iavl-cache-size"),
+			IAVLDisableFastNode:          v.GetBool("iavl-disable-fastnode"),
+			CompactionInterval:           v.GetUint64("compaction-interval"),
+			NoVersioning:                 v.GetBool("no-versioning"),
+			SeparateOrphanStorage:        v.GetBool("separate-orphan-storage"),
+			SeparateOrphanVersionsToKeep: v.GetInt64("separate-orphan-versions-to-keep"),
+			NumOrphanPerFile:             v.GetInt("num-orphan-per-file"),
+			OrphanDirectory:              v.GetString("orphan-dir"),
 		},
 		Telemetry: telemetry.Config{
 			ServiceName:             v.GetString("telemetry.service-name"),
@@ -335,6 +350,7 @@ func GetConfig(v *viper.Viper) (Config, error) {
 		StateSync: StateSyncConfig{
 			SnapshotInterval:   v.GetUint64("state-sync.snapshot-interval"),
 			SnapshotKeepRecent: v.GetUint32("state-sync.snapshot-keep-recent"),
+			SnapshotDirectory:  v.GetString("state-sync.snapshot-directory"),
 		},
 	}, nil
 }
