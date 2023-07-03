@@ -189,7 +189,7 @@ replace (
 	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 
-	github.com/tendermint/tendermint => github.com/Timwood0x10/sei-tendermint v0.0.0-20230620033258-c7843ff5e746
+	github.com/tendermint/tendermint => github.com/Timwood0x10/sei-tendermint v0.0.0-20230703080427-7a134e7b9339
 
 	// latest grpc doesn't work with with our modified proto compiler, so we need to enforce
 	// the following version across all dependencies.
